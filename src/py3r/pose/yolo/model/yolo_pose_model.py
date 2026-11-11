@@ -41,7 +41,7 @@ def parse_instance_types(instance_types: List[dict]) -> List[PoseInstanceType]:
     parsed_instance_types = []
     for instance_type in instance_types:
         name = instance_type["name"]
-        points = instance_type["points"]
+        points = instance_type["points"] if "points" in instance_type else instance_type["keypoints"]
         skeleton = instance_type["skeleton"]
 
         point_names = [point["name"] for point in points]

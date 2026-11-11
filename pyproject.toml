@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py3r_pose"
-version = "1.0.0"
+version = "1.0.1"
 authors = [
   { name="Marcel Schmutz", email="mschmut@ethz.ch" },
 ]

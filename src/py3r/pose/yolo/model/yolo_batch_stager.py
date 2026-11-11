@@ -9,10 +9,11 @@ class YOLOBatchStager:
 
     Inputs (per call): list of N (1 <= N <= B) uint8 images, each either:
       - (H, W) if in_channels == 1 (grayscale)
-      - (H, W, 3) if in_channels == 3 (RGB)
+      - (H, W, 3) in BGR order if in_channels == 3 (OpenCV convention, e.g. cv2.VideoCapture frames)
 
     Output:
-      - CUDA float32 batch: (N, 3, H_b, W_b) in [0,1]
+      - CUDA float32 batch: (N, 3, H_b, W_b) in [0,1], RGB channel order (converted from BGR
+        to match what the YOLO model expects when fed a pre-built tensor)
         where (H_b, W_b) = max height/width across the N images (each <= imgsz)
       - (H_b, W_b)
     """
@@ -20,7 +21,7 @@ class YOLOBatchStager:
         self,
         b: int,
         imgsz: Union[Tuple[int, int], int] = 640,
-        in_channels: int = 1,      # 1 for grayscale, 3 for RGB
+        in_channels: int = 1,      # 1 for grayscale, 3 for BGR
         device: str = "cuda",
         pad_value: int = 114,
         channels_last: bool = True,
@@ -95,7 +96,7 @@ class YOLOBatchStager:
             self.cpu_u8[:n, :h_b, :w_b].fill_(self.pad_value)
             for i, im in enumerate(images):
                 h, w = sizes[i]
-                t = torch.from_numpy(np.ascontiguousarray(im[:, :, :3]))  # (h,w,3) u8
+                t = torch.from_numpy(np.ascontiguousarray(im[:, :, 2::-1]))  # BGR -> RGB, (h,w,3) u8
                 self.cpu_u8[i, :h, :w].copy_(t, non_blocking=True)
 
         # 3) H→D copy + normalize + layout convert (on a side stream)
