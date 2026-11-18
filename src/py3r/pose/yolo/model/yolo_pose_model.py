@@ -9,8 +9,6 @@ from py3r.pose.core.types import PoseInstanceType, PoseInstance, PosePoint
 from torch import Tensor
 from ultralytics import YOLO
 
-from py3r.pose.core.model.pose_model import PoseModel
-
 
 def load_instance_types(instance_types_folder: Path) -> List[dict]:
     instance_types_files = list(instance_types_folder.glob("*.yaml"))
@@ -132,17 +130,20 @@ class YoloPoseModel:
             box_coords = result.boxes.xyxy[instance_index]
             box_coords = (float(box_coords[0]), float(box_coords[1]), float(box_coords[2]), float(box_coords[3]))
 
-            instance_points_xy = result.keypoints.xy[instance_index]
 
-            point_confs = []
-            point_coords = []
-            for point_name in instance_type.point_names:
-                output_index = self.output_mapping[instance_type_name, point_name]
-                point_confs.append(result.keypoints.conf[instance_index][output_index])
-                point_xy = instance_points_xy[output_index]
-                point_coords.append(point_xy)
+            points = []
+            if result.keypoints is not None:
+                point_confs = []
+                point_coords = []
 
-            points = [PosePoint(float(coords[0]), float(coords[1]), float(conf)) for conf, coords in zip(point_confs, point_coords)]
+                instance_points_xy = result.keypoints.xy[instance_index]
+                for point_name in instance_type.point_names:
+                    output_index = self.output_mapping[instance_type_name, point_name]
+                    point_confs.append(result.keypoints.conf[instance_index][output_index])
+                    point_xy = instance_points_xy[output_index]
+                    point_coords.append(point_xy)
+
+                points = [PosePoint(float(coords[0]), float(coords[1]), float(conf)) for conf, coords in zip(point_confs, point_coords)]
 
             instances.append(PoseInstance(instance_id, instance_type, box_coords, points, float(instance_conf)))
 
